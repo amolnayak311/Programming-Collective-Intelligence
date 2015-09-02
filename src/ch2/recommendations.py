@@ -61,24 +61,24 @@ def sim_pearson(prefs, person1, person2):
     common_prefs = [pref for pref in p1_p if pref in p2_p]
     num_common_prefs = len(common_prefs)
     
-      
-    pref_and_square_p1 = [(p1_p[pref], pow(p1_p[pref], 2)) for pref in common_prefs] 
-    pref_and_square_p2 = [(p2_p[pref], pow(p2_p[pref], 2)) for pref in common_prefs]
-    sum_square_p1 = reduce(lambda x, y : (x[0] + y[0], x[1] + y[1]), pref_and_square_p1)
-    sum_square_p2 = reduce(lambda x, y : (x[0] + y[0], x[1] + y[1]), pref_and_square_p2)
-    prod_prefs = sum([p1_p[pref] * p2_p[pref] for pref in common_prefs])
-    
-     
-    # TODO write the complete mathematical formula here, give reference to derivation
-    # Denominator is sqrt(( sum_of_squares of p1- square_of_sum of p1 / n)*( sum_of_squares of p2- square_of_sum of p2 / n))
-    den = sqrt((sum_square_p1[1] - pow(sum_square_p1[0], 2) / num_common_prefs) * (sum_square_p2[1] - pow(sum_square_p2[0], 2) / num_common_prefs))
+    if num_common_prefs != 0:
+        pref_and_square_p1 = [(p1_p[pref], pow(p1_p[pref], 2)) for pref in common_prefs] 
+        pref_and_square_p2 = [(p2_p[pref], pow(p2_p[pref], 2)) for pref in common_prefs]
+        sum_square_p1 = reduce(lambda x, y : (x[0] + y[0], x[1] + y[1]), pref_and_square_p1)
+        sum_square_p2 = reduce(lambda x, y : (x[0] + y[0], x[1] + y[1]), pref_and_square_p2)
+        prod_prefs = sum([p1_p[pref] * p2_p[pref] for pref in common_prefs])     
+        # TODO write the complete mathematical formula here, give reference to derivation
+        # Denominator is sqrt(( sum_of_squares of p1- square_of_sum of p1 / n)*( sum_of_squares of p2- square_of_sum of p2 / n))
+        den = sqrt((sum_square_p1[1] - pow(sum_square_p1[0], 2) / num_common_prefs) * (sum_square_p2[1] - pow(sum_square_p2[0], 2) / num_common_prefs))
         
-    # Avoid div by 0
-    if den == 0:
-        return 0
+        # Avoid div by 0
+        if den == 0:
+            return 0
+        else:
+            # Sum of products - (product of sum / n)
+            return  (prod_prefs - (sum_square_p1[0] * sum_square_p2[0] / num_common_prefs)) / den
     else:
-        # Sum of products - (product of sum / n)
-        return  (prod_prefs - (sum_square_p1[0] * sum_square_p2[0] / num_common_prefs)) / den
+        return 0
     
 
 # Returns the best match for the person from the prefs dictionary
@@ -134,6 +134,28 @@ def transformPrefs(prefs):
             )
     
 
+def loadMovieLens(path="../../dataset/ml-100k"):    
+    movies = dict(map(lambda split: (split[0], split[1]), [line.split("|")[0:2] for line in open(path + "/u.item")]))
+    movies_grouped_by_users = groupby(
+                                      sorted(
+                                             # Emit (user, (movie_id, rating) )
+                                             map(lambda (x): (x[0], (x[1], x[2])), 
+                                                 [line.split("\t") for line in open(path + "/u.data")]
+                                            )
+                                        ),
+                                lambda (key, _) : key
+                            )
+    
+    
+    return dict( 
+               (user, dict(
+                           map(lambda (_, (movie_id, rating )): (movies[movie_id], float(rating)), 
+                               grouped_values
+                            )
+                           )
+                ) 
+               for user, grouped_values in movies_grouped_by_users
+    )
     
 print "Similarity by Euclidean distance between Lisa Rose and Gene Seymour is ", sim_distance(critics, "Lisa Rose", "Gene Seymour")
 print "Similarity by Euclidean distance between Lisa Rose and Jack Matthews is ", sim_distance(critics, "Lisa Rose", "Jack Matthews")
@@ -146,3 +168,8 @@ print "Top matches for Superman Returns are ", topMatches(transformPrefs(critics
 #Euclidean distance doesn't return negative values 
 print "Top matches for Superman Returns are ", topMatches(transformPrefs(critics), "Superman Returns", similarity=sim_distance)
 print "Recommendations for Just My Luck are ", getRecommendations(transformPrefs(critics), "Just My Luck")
+print "\n\nRunning Tests on Movielens database"
+prefs = loadMovieLens()
+#print prefs['87']
+#print topMatches(prefs, '87')
+print "Top recommendations for user 87 are\n", getRecommendations(prefs, '87')[0:30]
