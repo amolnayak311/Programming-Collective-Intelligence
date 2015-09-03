@@ -156,6 +156,13 @@ def loadMovieLens(path="../../dataset/ml-100k"):
                 ) 
                for user, grouped_values in movies_grouped_by_users
     )
+
+#
+def calculateSimilarItems(prefs, n = 10, similarity=sim_distance):
+    #Inverted ti be item centric
+    itemPrefs = transformPrefs(prefs)
+    #May take time for larrge data sets
+    return dict((item, topMatches(itemPrefs, item, n, similarity)) for item in itemPrefs)
     
 print "Similarity by Euclidean distance between Lisa Rose and Gene Seymour is ", sim_distance(critics, "Lisa Rose", "Gene Seymour")
 print "Similarity by Euclidean distance between Lisa Rose and Jack Matthews is ", sim_distance(critics, "Lisa Rose", "Jack Matthews")
@@ -173,3 +180,5 @@ prefs = loadMovieLens()
 #print prefs['87']
 #print topMatches(prefs, '87')
 print "Top recommendations for user 87 are\n", getRecommendations(prefs, '87')[0:30]
+#Following operation takes time
+#similar_items = calculateSimilarItems(prefs, n = 50) 
