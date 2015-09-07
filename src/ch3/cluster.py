@@ -242,7 +242,7 @@ def get_min_max_range_values(rows):
 #
 def get_k_centroids(min_max_range_values, k):
     return [[random() * (min_max_range_values[i][1] - min_max_range_values[i][0]) + min_max_range_values[i][0] 
-     for i in range(len(min_max_range_values))] for j in range(k)]
+     for i in range(len(min_max_range_values))] for _ in range(k)]
 
 #print get_min_max_range_values( [ [1, 2, 3, 4], [5, 6, 7, 8], [4, 3, 2, 1] ])
 
@@ -251,7 +251,46 @@ def get_k_centroids(min_max_range_values, k):
 def kclusters(rows, distance = pearson, k = 4):
     ranges = get_min_max_range_values(rows)
     clusters = get_k_centroids(ranges, k)
-    # TODO: Complete the implementation
+    
+    #perform the operation of placing each of the n rows into k clusters repeatedly
+    #till two subsequent iterations of partitioning the n rows in k clusters yield same result
+    #Need to check if this assumption of using 100 iterations is good enough or that needs to be derived
+    #based on the number of k clusters and n rows
+    
+    #Stores the matches found in last iteration
+    lastmatches = None
+    for i in range(100):
+        print "Executing the ", i, 'th iteration'        
+        #For each of the rows, find which of the k centroids given in the variable clusters are close
+        for n in range(rows):
+            row = rows[n]
+            
+            #This is a list of lists where the total number of elements equal to the number of rows.
+            #Each of the k sub lists hold the multiple rows from the original set of rows provided.
+            #Note that one row can belong to only one of the k sub list 
+            bestmatches = [[] for _ in range(k)]
+            bestmatch = 0
+            bestdistance = distance(clusters[0], row)
+            for k in range(1, k):
+                d = distance(clusters[k], row)
+                if d < bestdistance:
+                    bestdistance = d
+                    bestmatch = k
+            
+            bestmatches[bestmatch].append(n)
+    
+    if bestmatches == lastmatches:
+        #No need to further iterate as the n rows are now stable in k clusters
+        break
+    else:
+        lastmatches = bestmatches
+            
+    #After the previous iteration, we have segregated all n rows in these k clusters.
+    #Next step is to move these k centroids to the center of the data points in that particular cluster    
+    #TODO: Fill in the code here
+     
+      
+    
     return None
 
 
