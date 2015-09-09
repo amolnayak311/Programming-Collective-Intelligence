@@ -5,7 +5,7 @@ Created on Sep 5, 2015
 '''
 
 from math import sqrt
-from itertools import permutations, chain
+from operator import add
 from PIL import Image, ImageDraw
 from random import random
 
@@ -248,6 +248,23 @@ def get_k_centroids(min_max_range_values, k):
 
 #print get_k_centroids(get_min_max_range_values( [ [1, 2, 3, 4], [5, 6, 7, 8], [4, 3, 2, 1] ]), k = 2)
 
+
+#
+#
+# on invoking for e.g. find_mean_of_arrays([[1, 2, 3], [4, 5, 6]])
+# We get [2.5, 3.5, 4.5] 
+def find_mean_of_arrays(list_of_arrays):
+        added_list = reduce (
+                        lambda cumulated_list, next_list: 
+                            map(add,cumulated_list, next_list),
+                            list_of_arrays)
+        total_closes_nodes = len(list_of_arrays)
+        return map(lambda element: float(element) / total_closes_nodes, added_list)
+        
+
+#
+#
+#        
 def kclusters(rows, distance = pearson, k = 4):
     ranges = get_min_max_range_values(rows)
     clusters = get_k_centroids(ranges, k)
@@ -262,36 +279,34 @@ def kclusters(rows, distance = pearson, k = 4):
     for i in range(100):
         print "Executing the ", i, 'th iteration'        
         #For each of the rows, find which of the k centroids given in the variable clusters are close
-        for n in range(rows):
-            row = rows[n]
-            
+        for row in rows:            
             #This is a list of lists where the total number of elements equal to the number of rows.
             #Each of the k sub lists hold the multiple rows from the original set of rows provided.
             #Note that one row can belong to only one of the k sub list 
             bestmatches = [[] for _ in range(k)]
             bestmatch = 0
             bestdistance = distance(clusters[0], row)
-            for k in range(1, k):
-                d = distance(clusters[k], row)
+            for i in range(1, k):
+                d = distance(clusters[i], row)
                 if d < bestdistance:
                     bestdistance = d
-                    bestmatch = k
+                    bestmatch = i
             
-            bestmatches[bestmatch].append(n)
+            bestmatches[bestmatch].append(row)
     
-    if bestmatches == lastmatches:
-        #No need to further iterate as the n rows are now stable in k clusters
-        break
-    else:
-        lastmatches = bestmatches
+        if bestmatches == lastmatches:
+            #No need to further iterate as the n rows are now stable in k clusters
+            break
+        else:
+            lastmatches = bestmatches
             
-    #After the previous iteration, we have segregated all n rows in these k clusters.
-    #Next step is to move these k centroids to the center of the data points in that particular cluster    
-    #TODO: Fill in the code here
-     
-      
+        #After the previous iteration, we have segregated all n rows in these k clusters.
+        #Next step is to move these k centroids to the center of the data points in that particular cluster    
+        #For finding the new centroids, simply addup arrays element wise for the given centroid's bestmatches.    
+        clusters = [find_mean_of_arrays(closest_nodes) for closest_nodes in bestmatches]
+
     
-    return None
+    return bestmatches
 
 
         
