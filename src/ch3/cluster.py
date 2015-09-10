@@ -254,21 +254,25 @@ def get_k_centroids(min_max_range_values, k):
 # on invoking for e.g. find_mean_of_arrays([[1, 2, 3], [4, 5, 6]])
 # We get [2.5, 3.5, 4.5] 
 def find_mean_of_arrays(list_of_arrays):
-        added_list = reduce (
+        if len(list_of_arrays) > 0:
+            added_list = reduce (
                         lambda cumulated_list, next_list: 
                             map(add,cumulated_list, next_list),
                             list_of_arrays)
-        total_closes_nodes = len(list_of_arrays)
-        return map(lambda element: float(element) / total_closes_nodes, added_list)
+            total_closes_nodes = len(list_of_arrays)
+            return map(lambda element: float(element) / total_closes_nodes, added_list)
+        else:
+            return list_of_arrays
         
 
 #
-#
+# Important to note that two subsequent runs will not match as there is a random number in the centroid choosing
+# procedure
 #        
 def kclusters(rows, distance = pearson, k = 4):
     ranges = get_min_max_range_values(rows)
     clusters = get_k_centroids(ranges, k)
-    
+        
     #perform the operation of placing each of the n rows into k clusters repeatedly
     #till two subsequent iterations of partitioning the n rows in k clusters yield same result
     #Need to check if this assumption of using 100 iterations is good enough or that needs to be derived
@@ -277,7 +281,8 @@ def kclusters(rows, distance = pearson, k = 4):
     #Stores the matches found in last iteration
     lastmatches = None
     for i in range(100):
-        print "Executing the ", i, 'th iteration'        
+        print "Executing the ", i, 'th iteration'
+        
         #For each of the rows, find which of the k centroids given in the variable clusters are close
         bestmatches = [[] for _ in range(k)]
         bestmatches_indexes = [[] for _ in range(k)]
@@ -296,9 +301,10 @@ def kclusters(rows, distance = pearson, k = 4):
             
             bestmatches[bestmatch].append(row)
             bestmatches_indexes[bestmatch].append(index)    
-        
+    
+        #print bestmatches_indexes
         if bestmatches == lastmatches:
-            #No need to0 further iterate as the n rows are now stable in k clusters
+            #No need to further iterate as the n rows are now stable in k clusters
             break
         else:
             lastmatches = bestmatches
