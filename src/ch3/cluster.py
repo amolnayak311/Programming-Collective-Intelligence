@@ -279,23 +279,26 @@ def kclusters(rows, distance = pearson, k = 4):
     for i in range(100):
         print "Executing the ", i, 'th iteration'        
         #For each of the rows, find which of the k centroids given in the variable clusters are close
-        for row in rows:            
+        bestmatches = [[] for _ in range(k)]
+        bestmatches_indexes = [[] for _ in range(k)]
+        for index in range(len(rows)):
+            row = rows[index]            
             #This is a list of lists where the total number of elements equal to the number of rows.
             #Each of the k sub lists hold the multiple rows from the original set of rows provided.
-            #Note that one row can belong to only one of the k sub list 
-            bestmatches = [[] for _ in range(k)]
+            #Note that one row can belong to only one of the k sub list            
             bestmatch = 0
             bestdistance = distance(clusters[0], row)
-            for i in range(1, k):
-                d = distance(clusters[i], row)
+            for j in range(1, k):
+                d = distance(clusters[j], row)
                 if d < bestdistance:
                     bestdistance = d
-                    bestmatch = i
+                    bestmatch = j
             
             bestmatches[bestmatch].append(row)
-    
+            bestmatches_indexes[bestmatch].append(index)    
+        
         if bestmatches == lastmatches:
-            #No need to further iterate as the n rows are now stable in k clusters
+            #No need to0 further iterate as the n rows are now stable in k clusters
             break
         else:
             lastmatches = bestmatches
@@ -306,14 +309,20 @@ def kclusters(rows, distance = pearson, k = 4):
         clusters = [find_mean_of_arrays(closest_nodes) for closest_nodes in bestmatches]
 
     
-    return bestmatches
+    return bestmatches_indexes
 
 
         
-# blognames, words, data = readfile(file_name = "../../dataset/blogdata.txt")
-# #blognames, words, data = readfile()
-# clust = hcluster(data)
+blognames, words, data = readfile(file_name = "../../dataset/blogdata.txt")
+#blognames, words, data = readfile()
+#clust = hcluster(data)
 # #printclust(clust, labels = blognames)
 # drawdendrogram(clust, blognames)
 # wordclust = hcluster(rotatematrix(data))
 # drawdendrogram(wordclust, labels = words, jpeg='wordclust.jpg')
+k = 10
+kclust = kclusters(data, k = k)
+for i in range(10):
+    print "Printing Cluster ", (i + 1)
+    print [blognames[i] for i in kclust[i]]
+    
