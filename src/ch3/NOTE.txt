@@ -1,0 +1,3 @@
+The Zebo URL Doesnt work and thus the code samples given in the book doesnt work.
+All pages starting page 45 of Chapter 3 are not covered in the code samples and to are 
+to be completed later without hitting the Zebo URL
