@@ -4,17 +4,19 @@
 from urllib2 import urlopen
 from BeautifulSoup import BeautifulSoup
 from urlparse import urljoin
+from pysqlite2 import dbapi2 as sqlite
+import re
 
 
 class crawler:
     def __init__(self, dbname):
-        pass
+        self.con = sqlite.connect(dbname)
     
     def __del__(self):
-        pass
+        self.con.close()
     
     def dbcommit(self):
-        pass
+        self.con.commit()
     
     
     def getentryid(self, table, field, value, createnew=True):
@@ -23,15 +25,38 @@ class crawler:
     
     
     def addtoindex(self, url, soup):
+        if self.isindexed(url): return
+
         print "Indexing %s"%url
         
+        text = self.gettextonly(soup)
+        words = self.separatewords(text)        
+        
     
+    #
+    #
+    #    
     def gettextonly(self, soup):
-        return None
+        v = soup.string        
+        if v == None:
+            contents = soup.contents
+            resulttext = ''
+            for c in contents:                
+                resulttext += self.gettextonly(c) + "\n"
+            
+            return resulttext          
+        else:
+            return v.strip()
+        
     
     
+    #
+    # Not a very trivial operation in reality and a lot of research is being done into thi
+    # For sake of this example we will be separating over anything that is not a word or number  
+    #
     def separatewords(self, text):
-        return None
+        splitter = re.compile("\\W*")        
+        return [w.lower() for w in splitter.split(text) if w != '']
     
     
     def isindexed(self, url):
@@ -79,12 +104,32 @@ class crawler:
                     
                 
                 
-    
-    def createindextable(self):
-        pass
+
+    def createindextable(self, drop_existing = False):
+        if drop_existing:
+            self.con.execute('drop table if exists urllist')
+            self.con.execute('drop table if exists wordlist')
+            self.con.execute('drop table if exists wordlocation')
+            self.con.execute('drop table if exists link')
+            self.con.execute('drop table if exists linkwords')
+            
+        self.con.execute('create table urllist(url)')
+        self.con.execute('create table wordlist(word)')
+        self.con.execute('create table wordlocation(urlid, wordid, location)')
+        self.con.execute('create table link(fromid integer, toid integer)')
+        self.con.execute('create table linkwords(wordid, linkid)')
+        self.con.execute('create index wordidx on wordlist(word)')
+        self.con.execute('create index urlidx on urllist(url)')
+        self.con.execute('create index wordurlidx on wordlocation(wordid)')
+        self.con.execute('create index urltoidx on link(toid)')
+        self.con.execute('create index urlfromidx on link(fromid)')
+        print "Schema Successfully (Re)created"
+        
     
     
 
-crawler = crawler("dummy")    
-crawler.crawl(["https://en.wikipedia.org/wiki/Python_(programming_language)"])
+crawler = crawler("searchindex.db")
+#crawler.createindextable(True)
+#crawler.createindextable()
+crawler.crawl(["https://en.wikipedia.org/wiki/Programming_language"])
     
