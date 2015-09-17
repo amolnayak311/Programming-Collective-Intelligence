@@ -172,30 +172,49 @@ class searcher:
     def __del__(self):
         self.con.close()
 
-    #
-    # Gets the count of documents in which the given word is present
-    #
-    def get_doc_count_for_word(self, word):
-        return self.con.execute("select count(*) from wordlist where word = '%s'" % word.lower()).fetchone()[0]
+       
+    
+    
     #
     #
     #
     def getmatchrows(self, q):
         #Split the words by space
-        words = q.split(' ')        
-        doc_count = [self.get_doc_count_for_word(word) for word in words]
-        non_zero_words = filter(lambda (_, count): count >0 , zip(words, doc_count))
-        print non_zero_words
-        #TODO
-        
-        
+        words = q.split(' ')
+        in_values = ", ".join(["'%s'" % word.lower() for word in words])
+        cursor = self.con.execute("select word, rowid from wordlist where word in (%s)" % in_values)
+        available_words = [(elem[0], elem[1]) for elem in cursor]
+        if len(available_words) > 0:
+            fields_tables_conditions = [
+                 ("w%d.location" % i, 
+                  "wordlocation w%d" % i,
+                  "w%d.wordid = %s" % (i, available_words[i][1])
+                  ) for i in range(len(available_words))]
+            joins = " and ".join(["w%d.urlid = w%d.urlid" % (i - 1, i) for i in range(1, len(available_words))])
+            (field_list, table_list, condition_list) = zip(*fields_tables_conditions)             
+            tables = ", ".join(table_list)
+            fields = "w0.urlid, " + ", ".join(field_list)
+            conditions = " and ".join(condition_list)            
+            conditions = conditions if len(joins) == 0 else joins + " and " + conditions  
+            query = "select %s from %s where %s" % (fields, tables, conditions)
+            (_, word_ids) = zip(*available_words)
+            print query
+            return [(row, word_ids) for row in self.con.execute(query)]                        
+        else:
+            return None
+  
 
 
 
-crawler = crawler("searchindex.db")
+#crawler = crawler("searchindex.db")
 #crawler.createindextable(True)
 #crawler.createindextable()
-#crawler.crawl(["https://en.wikipedia.org/wiki/Programming_language"])
-#crawler.crawl(["https://en.wikipedia.org/wiki/Functional_programming"])
+#crawler.crawl(["https://en.wikipedia.org/wiki/Programming_language", "https://en.wikipedia.org/wiki/Functional_programming"])
 searcher = searcher('searchindex.db')
-searcher.getmatchrows("Programming in Scala and Python")
+#crawler.con.execute('create index wordurlidx_1 on wordlocation(urlid)')
+#Works badly for long queries, following for instance screws
+#results = searcher.getmatchrows("Functional programming with Scala and python")
+
+#Following doesn't work too well and returns 123689 results
+results = searcher.getmatchrows("Functional programming")
+print len(results)
