@@ -178,7 +178,7 @@ class searcher:
     #
     #
     #
-    def getmatchrows(self, q):
+    def getmatchrows(self, q, n = 100):
         #Split the words by space
         words = q.split(' ')
         in_values = ", ".join(["'%s'" % word.lower() for word in words])
@@ -196,13 +196,41 @@ class searcher:
             fields = "w0.urlid, " + ", ".join(field_list)
             conditions = " and ".join(condition_list)            
             conditions = conditions if len(joins) == 0 else joins + " and " + conditions  
-            query = "select %s from %s where %s" % (fields, tables, conditions)
+            query = "select %s from %s where %s limit %d" % (fields, tables, conditions, n)            
             (_, word_ids) = zip(*available_words)
-            print query
-            return [(row, word_ids) for row in self.con.execute(query)]                        
+            return [row for row in self.con.execute(query)], word_ids
         else:
             return None
   
+  
+    #
+    #
+    #
+    def getscoredlist(self, rows, wordids):
+        totalscores = dict([(row[0], 0) for row in rows])
+        #TODO
+        weights = []
+        
+        #Complex
+        for (weight, score) in weights:
+            for url in totalscores:
+                totalscores[url] += weight * score[url]
+        
+        return totalscores
+    
+    def geturlname(self, urlid):
+        return self.con.execute("select url from urllist where rowid = %d" % urlid).fetchone()[0]
+  
+    #
+    #
+    #
+    def query(self, q):
+        rows, wordids = self.getmatchrows(q)
+        scores = self.getscoredlist(rows, wordids)
+        rankedscores = sorted([(score, urlid) for (urlid, score) in scores.items()], reverse =True)
+        #Why sort all when top n needed?
+        for (score, urlid) in rankedscores[0:10]:
+            print "%f\t%s" % (score, self.geturlname(urlid))
 
 
 
@@ -216,5 +244,5 @@ searcher = searcher('searchindex.db')
 #results = searcher.getmatchrows("Functional programming with Scala and python")
 
 #Following doesn't work too well and returns 123689 results
-results = searcher.getmatchrows("Functional programming")
-print len(results)
+searcher.query('Programming in Scala')
+
