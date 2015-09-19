@@ -6,6 +6,7 @@ from BeautifulSoup import BeautifulSoup
 from urlparse import urljoin
 from pysqlite2 import dbapi2 as sqlite
 import re
+from itertools import groupby
 
 
 ignorewords=frozenset(['the','of','to','and','a','in','is','it'])
@@ -203,24 +204,53 @@ class searcher:
             return None
   
   
+       
+    def geturlname(self, urlid):
+        return self.con.execute("select url from urllist where rowid = %d" % urlid).fetchone()[0]
+  
+  
+    #
+    # Value 0 indicates min score and 1 indicates max score
+    #
+    def normalize(self, scores, smallIsBetter = True):        
+        vsmall = 0.00001
+        if smallIsBetter:
+            min_score = min(scores.values())
+            return dict([(k, float(min_score) / max(v, vsmall)) for (k, v) in scores.items()])
+        else:
+            max_score = max(scores.values())
+            if max_score == 0 : max_score = vsmall
+            return dict([ (k, float(v) / max_score) for (k, v) in scores.items()])
+        
+    
+    
+    
+    #
+    #
+    #
+    def frequencyscore(self, rows):        
+        return self.normalize(dict(
+                        [
+                         (key, len(list(values)) ) for (key, values) in groupby(sorted(rows), lambda (url, _1, _2) : url)
+                         ]
+                        ), smallIsBetter = False) 
+             
+        
+    
     #
     #
     #
     def getscoredlist(self, rows, wordids):
         totalscores = dict([(row[0], 0) for row in rows])
-        #TODO
-        weights = []
+        weights = [(1.0, self.frequencyscore(rows))]
         
         #Complex
         for (weight, score) in weights:
             for url in totalscores:
                 totalscores[url] += weight * score[url]
         
-        return totalscores
+        return totalscores    
     
-    def geturlname(self, urlid):
-        return self.con.execute("select url from urllist where rowid = %d" % urlid).fetchone()[0]
-  
     #
     #
     #
