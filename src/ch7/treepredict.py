@@ -4,6 +4,7 @@ Created on Oct 4, 2015
 @author: Amol
 '''
 from itertools import groupby
+from math import log
 
 my_data=[['slashdot','USA','yes',18,'None'],
         ['google','France','yes',23,'Premium'],
@@ -58,9 +59,7 @@ def divideset(rows, column, value):
     )
     
 
-# (yes_list, no_list) = divideset(my_data, 2 , 'yes')
-# print yes_list
-# print no_list
+
 
 
 #
@@ -91,15 +90,57 @@ def uniquecounts(rows):
 #    P(N)    The Result is None,
 #    P(B)    The Result is Basic, that is the membership chosen is Basic
 #    P(P)    The Result is Premium, that is the membership chosen is Premium
+#
+#  This however is simplified by doing the following 1 - ( P(N)*P(N) + P(B)*P(B) + P(P)*P(P) )
 def giniimpurity(rows):
-    total=len(rows)
-    counts=uniquecounts(rows)
-    values = [counts[c] for c in counts]
-    return sum([float(v1) / total  * float(v2) / total for v1 in values for v2 in values if v1 != v2])    
+    total = len(rows)
+    probs = map(lambda v: float(v) / total, uniquecounts(rows).values())
+    return 1 - sum([p * p for p in probs])
+
+# Entropy is the amount of disorder in the set.
+# It is defined as p(i) * log2(p(i)) for all outcomes
+def entropy(rows):
+    total = len(rows)
+    probs = map(lambda v: float(v) / total, uniquecounts(rows).values())
+    return sum(map(lambda p: -p * log(p, 2), probs))
 
 
-#print giniimpurity(my_data) # 0.6328125
+#
+#
+#
+def buildtree(rows, scoref = entropy):
+    if len(rows) == 0 : return decisionnode()
+        
+    current_score = scoref(rows)
+    
+    #Initialize with defaults
+    best_score = 0.0
+    best_criteria_col_index, best_criteria_col_value = (None, None) 
+    best_true_set, best_false_set = (None, None)
+    
+    #Algorithm is as follows
+    #1. For each of the columns, find distinct values across the rows
+    #2. Partition the set into two, called set1 and set2  based on each of these columns and the corresponding values they hold
+    #3. Calculate the information gain as follows
+    #        info_gain = current_score - P(set1) * scoref(set1) - P(set2) * scoref(set2)
+    #4. If info gain is negative, no point going ahead, this is the leaf node. Set the result as the uniquecount(rows)
+    #5. If however, the information gain is more than 0, then take the best set1 and set2 and the partitioning column and value
+    #   as the criteria
+    #6. Recursively call buildtree on set1 and set2 to get the true and false branch and return a decisionnode with the returned
+    #    left and right tree and the best criteria column index and value
+    
+
+
+
 
 
 #print(uniquecounts(my_data))
+#print giniimpurity(my_data) # 0.6328125
+#print entropy(my_data)  #1.50524081494
+# yes_list, no_list = divideset(my_data, 2 , 'yes')
+# print entropy(yes_list)
+# print giniimpurity(yes_list)
+
+
+
 
