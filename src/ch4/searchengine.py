@@ -180,6 +180,7 @@ class searcher:
     #
     #
     def getmatchrows(self, q, n = 100):
+        #Added n here to make quering faster, Not desired though, will miss out on results
         #Split the words by space
         words = q.split(' ')
         in_values = ", ".join(["'%s'" % word.lower() for word in words])
@@ -254,12 +255,12 @@ class searcher:
     #
     #
     #
-    def query(self, q):
+    def query(self, q, n = 10):
         rows, wordids = self.getmatchrows(q)
         scores = self.getscoredlist(rows, wordids)
         rankedscores = sorted([(score, urlid) for (urlid, score) in scores.items()], reverse =True)
         #Why sort all when top n needed?
-        for (score, urlid) in rankedscores[0:10]:
+        for (score, urlid) in rankedscores[0:n]:
             print "%f\t%s" % (score, self.geturlname(urlid))
 
 
@@ -274,5 +275,7 @@ searcher = searcher('searchindex.db')
 #results = searcher.getmatchrows("Functional programming with Scala and python")
 
 #Following doesn't work too well and returns 123689 results
-searcher.query('Programming in Scala')
+q = 'Programming in Scala'
+print "Searching for text '%s'" % q
+searcher.query(q)
 
