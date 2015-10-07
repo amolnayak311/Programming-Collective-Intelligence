@@ -196,6 +196,15 @@ def classify(observation,tree):
 # print entropy(yes_list)
 # print giniimpurity(yes_list)
 
+
+#
+#
+# Prune a tree
+def prune(tree, mingain, scoref=entropy):
+    #TODO: Prune the tree here here
+    None
+
+
 tree = buildtree(my_data)
 #print "Built tree is " 
 printtree(tree)
